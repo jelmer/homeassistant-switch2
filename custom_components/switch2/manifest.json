@@ -1,7 +1,7 @@
 {
   "domain": "switch2",
   "name": "Switch2",
-  "codeowners": [],
+  "codeowners": ["@jelmer"],
   "config_flow": true,
   "documentation": "https://github.com/jelmer/homeassistant-switch2",
   "iot_class": "cloud_polling",
