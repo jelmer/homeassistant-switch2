@@ -4,8 +4,8 @@
   "codeowners": ["@jelmer"],
   "config_flow": true,
   "documentation": "https://github.com/jelmer/homeassistant-switch2",
-  "issue_tracker": "https://github.com/jelmer/homeassistant-switch2/issues",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/jelmer/homeassistant-switch2/issues",
   "requirements": ["switch2>=0.1.0"],
   "version": "0.1.0"
 }
