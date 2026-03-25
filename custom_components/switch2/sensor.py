@@ -136,12 +136,12 @@ class Switch2LatestBillSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
         return bills[0].amount
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | float | None]:
+    def extra_state_attributes(self) -> dict[str, str | float | int | None]:
         """Return additional attributes."""
         bills = self.coordinator.data.bills
         if not bills:
             return {}
-        attrs: dict[str, str | float | None] = {
+        attrs: dict[str, str | float | int | None] = {
             "bill_date": bills[0].date.isoformat(),
             "detail_url": bills[0].detail_url,
         }
@@ -150,6 +150,12 @@ class Switch2LatestBillSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
             attrs["invoice_number"] = bill_detail.invoice_number
             attrs["period_from"] = bill_detail.period_from.isoformat()
             attrs["period_to"] = bill_detail.period_to.isoformat()
+            attrs["number_of_days"] = (
+                bill_detail.period_to - bill_detail.period_from
+            ).days
+            attrs["date_of_issue"] = bill_detail.date_of_issue.isoformat()
+            attrs["total_excl_vat"] = bill_detail.total_excl_vat
+            attrs["vat"] = bill_detail.vat
         return attrs
 
 
