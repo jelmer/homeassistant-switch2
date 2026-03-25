@@ -122,15 +122,21 @@ class Switch2LatestBillSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
         return bills[0].amount
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | None]:
+    def extra_state_attributes(self) -> dict[str, str | float | None]:
         """Return additional attributes."""
         bills = self.coordinator.data.bills
         if not bills:
             return {}
-        return {
+        attrs: dict[str, str | float | None] = {
             "bill_date": bills[0].date.isoformat(),
             "detail_url": bills[0].detail_url,
         }
+        bill_detail = self.coordinator.bill_detail
+        if bill_detail is not None:
+            attrs["invoice_number"] = bill_detail.invoice_number
+            attrs["period_from"] = bill_detail.period_from.isoformat()
+            attrs["period_to"] = bill_detail.period_to.isoformat()
+        return attrs
 
 
 class Switch2AccountBalanceSensor(CoordinatorEntity[Switch2Coordinator], SensorEntity):
