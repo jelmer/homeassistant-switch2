@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "homeassistant-switch2"
-version = "0.1.0"
+version = "0.1.2"
 description = "Home Assistant integration for Switch2 district heating"
 requires-python = ">=3.11"
 dependencies = [
