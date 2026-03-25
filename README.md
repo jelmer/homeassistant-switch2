@@ -26,28 +26,3 @@ Fetches meter readings and bill history from the Switch2 customer portal
 
 Copy the `custom_components/switch2` directory into your Home Assistant
 `config/custom_components/` directory and restart Home Assistant.
-
-## Standalone API client
-
-The `switch2` Python package can be used independently of Home Assistant:
-
-```sh
-pip install .
-```
-
-```python
-import asyncio
-from switch2 import Switch2ApiClient
-
-async def main():
-    client = Switch2ApiClient("email@example.com", "password")
-    try:
-        data = await client.fetch_data()
-        print(data.customer)
-        print(data.readings[0])
-        print(data.bills[0])
-    finally:
-        await client.close()
-
-asyncio.run(main())
-```
