@@ -46,6 +46,7 @@ async def async_setup_entry(
         )
 
     entities.append(Switch2LatestBillSensor(coordinator, entry))
+    entities.append(Switch2AccountBalanceSensor(coordinator, entry))
 
     async_add_entities(entities)
 
@@ -129,4 +130,41 @@ class Switch2LatestBillSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
         return {
             "bill_date": bills[0].date.isoformat(),
             "detail_url": bills[0].detail_url,
+        }
+
+
+class Switch2AccountBalanceSensor(CoordinatorEntity[Switch2Coordinator], SensorEntity):
+    """Sensor showing the current account balance."""
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_native_unit_of_measurement = "GBP"
+    _attr_has_entity_name = True
+    _attr_name = "Account balance"
+
+    def __init__(
+        self,
+        coordinator: Switch2Coordinator,
+        entry: Switch2ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.unique_id}_account_balance"
+        self._attr_device_info = _device_info(entry, coordinator)
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current account balance."""
+        bill_detail = self.coordinator.bill_detail
+        if bill_detail is None:
+            return None
+        return bill_detail.balance
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | None]:
+        """Return additional attributes."""
+        bill_detail = self.coordinator.bill_detail
+        if bill_detail is None:
+            return {}
+        return {
+            "previous_balance": bill_detail.previous_balance,
+            "payments_received": bill_detail.payments_received,
         }
