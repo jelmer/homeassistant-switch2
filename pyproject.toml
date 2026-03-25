@@ -3,17 +3,16 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "switch2"
+name = "homeassistant-switch2"
 version = "0.1.0"
-description = "Client library for the Switch2 energy portal"
+description = "Home Assistant integration for Switch2 district heating"
 requires-python = ">=3.11"
 dependencies = [
-    "aiohttp>=3.9.0",
-    "beautifulsoup4>=4.12.0",
+    "switch2>=0.1.0",
 ]
 
 [tool.setuptools.packages.find]
-include = ["switch2*"]
+include = ["custom_components*"]
 
 [project.optional-dependencies]
 dev = [
