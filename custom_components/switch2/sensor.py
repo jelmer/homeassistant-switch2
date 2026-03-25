@@ -179,20 +179,19 @@ class Switch2AccountBalanceSensor(CoordinatorEntity[Switch2Coordinator], SensorE
     @property
     def native_value(self) -> float | None:
         """Return the current account balance."""
-        bill_detail = self.coordinator.bill_detail
-        if bill_detail is None:
+        account_balance = self.coordinator.data.account_balance
+        if account_balance is None:
             return None
-        return bill_detail.balance
+        return account_balance.balance
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | float | None]:
+    def extra_state_attributes(self) -> dict[str, str | None]:
         """Return additional attributes."""
-        bill_detail = self.coordinator.bill_detail
-        if bill_detail is None:
+        account_balance = self.coordinator.data.account_balance
+        if account_balance is None:
             return {}
         return {
-            "previous_balance": bill_detail.previous_balance,
-            "payments_received": bill_detail.payments_received,
+            "last_updated": account_balance.last_updated.isoformat(),
         }
 
 
