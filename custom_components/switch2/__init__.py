@@ -22,7 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: Switch2ConfigEntry) -> b
         entry.data[CONF_PASSWORD],
     )
 
-    coordinator = Switch2Coordinator(hass, client)
+    coordinator = Switch2Coordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
