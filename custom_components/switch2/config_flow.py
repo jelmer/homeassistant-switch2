@@ -34,9 +34,7 @@ class Switch2ConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            client = Switch2ApiClient(
-                user_input[CONF_EMAIL], user_input[CONF_PASSWORD]
-            )
+            client = Switch2ApiClient(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])
             try:
                 customer = await client.authenticate()
             except Switch2AuthError:
