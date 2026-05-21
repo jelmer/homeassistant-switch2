@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -18,10 +19,13 @@ UPDATE_INTERVAL = timedelta(hours=6)
 class Switch2Coordinator(DataUpdateCoordinator[Switch2Data]):
     """Coordinator to fetch data from Switch2."""
 
-    def __init__(self, hass: HomeAssistant, client: Switch2ApiClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, entry: ConfigEntry, client: Switch2ApiClient
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name="Switch2",
             update_interval=UPDATE_INTERVAL,
         )
