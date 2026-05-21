@@ -2,27 +2,13 @@
 
 from __future__ import annotations
 
-import os
-import sys
+import logging
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-print("DIAG cwd:", os.getcwd(), file=sys.stderr)
-for _p in sys.path:
-    print("DIAG sys.path:", repr(_p), file=sys.stderr)
-print(
-    "DIAG repo files:",
-    sorted(p for p in os.listdir(os.getcwd())),
-    file=sys.stderr,
-)
-try:
-    import custom_components as _cc
-
-    print("DIAG custom_components.__path__:", list(_cc.__path__), file=sys.stderr)
-except Exception as _e:  # noqa: BLE001
-    print("DIAG custom_components import failed:", repr(_e), file=sys.stderr)
+from custom_components.switch2.const import DOMAIN
 
 
 async def test_setup_entry_no_deprecation_warnings(hass, caplog):
@@ -31,10 +17,6 @@ async def test_setup_entry_no_deprecation_warnings(hass, caplog):
     Regression test for the DataUpdateCoordinator ContextVar deprecation
     introduced in HA 2026.x.
     """
-    import logging
-
-    from custom_components.switch2.const import DOMAIN
-
     caplog.set_level(logging.WARNING)
 
     fake_customer = MagicMock(account_number="ACC123", name="Jelmer", address="addr")
