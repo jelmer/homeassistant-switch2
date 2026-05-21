@@ -2,10 +2,27 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+print("DIAG cwd:", os.getcwd(), file=sys.stderr)
+for _p in sys.path:
+    print("DIAG sys.path:", repr(_p), file=sys.stderr)
+print(
+    "DIAG repo files:",
+    sorted(p for p in os.listdir(os.getcwd())),
+    file=sys.stderr,
+)
+try:
+    import custom_components as _cc
+
+    print("DIAG custom_components.__path__:", list(_cc.__path__), file=sys.stderr)
+except Exception as _e:  # noqa: BLE001
+    print("DIAG custom_components import failed:", repr(_e), file=sys.stderr)
 
 
 async def test_setup_entry_no_deprecation_warnings(hass, caplog):
