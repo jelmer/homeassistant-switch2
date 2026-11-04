@@ -7,6 +7,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from switch2 import Switch2ApiClient
+
 from .const import CONF_EMAIL, CONF_PASSWORD
 from .coordinator import Switch2Coordinator
 
