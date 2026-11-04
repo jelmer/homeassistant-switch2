@@ -44,6 +44,16 @@ def _charge_unique_id(entry: Switch2ConfigEntry, description: str) -> str:
     return f"{entry.unique_id}_charge_{slugify(description)}"
 
 
+# Units that line items are charged per: the name and unit of their rate.
+RATE_UNITS = {"kWh": ("{} unit rate", "GBP/kWh"), "days": ("{} per day", "GBP/day")}
+
+
+def _charge_rate(charge: BillCharge) -> float | None:
+    if charge.unit not in RATE_UNITS or not charge.quantity:
+        return None
+    return charge.charge / charge.quantity
+
+
 @callback
 def _migrate_charge_unique_ids(
     hass: HomeAssistant, entry: Switch2ConfigEntry, bill_detail: BillDetail
@@ -89,22 +99,29 @@ async def async_setup_entry(
     if coordinator.bill_detail is not None:
         _migrate_charge_unique_ids(hass, entry, coordinator.bill_detail)
 
-    known_unique_ids: set[str] = set()
+    known_unique_ids: set[str | None] = set()
 
     @callback
     def _add_new_charge_sensors() -> None:
         bill_detail = coordinator.bill_detail
         if bill_detail is None:
             return
-        new_entities: list[SensorEntity] = []
+        candidates: list[SensorEntity] = []
         for charge in _all_charges(bill_detail):
-            unique_id = _charge_unique_id(entry, charge.description)
-            if unique_id in known_unique_ids:
-                continue
-            known_unique_ids.add(unique_id)
-            new_entities.append(
+            candidates.append(
                 Switch2BillChargeSensor(coordinator, entry, charge.description)
             )
+            if _charge_rate(charge) is not None:
+                candidates.append(
+                    Switch2ChargeRateSensor(
+                        coordinator, entry, charge.description, charge.unit
+                    )
+                )
+        new_entities: list[SensorEntity] = []
+        for entity in candidates:
+            if entity.unique_id not in known_unique_ids:
+                known_unique_ids.add(entity.unique_id)
+                new_entities.append(entity)
         if new_entities:
             async_add_entities(new_entities)
 
@@ -258,11 +275,9 @@ class Switch2AccountBalanceSensor(CoordinatorEntity[Switch2Coordinator], SensorE
         }
 
 
-class Switch2BillChargeSensor(CoordinatorEntity[Switch2Coordinator], SensorEntity):
-    """Sensor showing a line item on the latest bill."""
+class _Switch2LineItemSensor(CoordinatorEntity[Switch2Coordinator], SensorEntity):
+    """Base for sensors derived from a line item on the latest bill."""
 
-    _attr_device_class = SensorDeviceClass.MONETARY
-    _attr_native_unit_of_measurement = "GBP"
     _attr_has_entity_name = True
 
     def __init__(
@@ -273,8 +288,6 @@ class Switch2BillChargeSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
     ) -> None:
         super().__init__(coordinator)
         self._description = description
-        self._attr_unique_id = _charge_unique_id(entry, description)
-        self._attr_name = description
         self._attr_device_info = _device_info(entry, coordinator)
 
     @property
@@ -289,6 +302,31 @@ class Switch2BillChargeSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
         return None
 
     @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        """Return additional attributes."""
+        charge = self._charge
+        if charge is None:
+            return {}
+        return {"units": charge.units}
+
+
+class Switch2BillChargeSensor(_Switch2LineItemSensor):
+    """Sensor showing a line item on the latest bill."""
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_native_unit_of_measurement = "GBP"
+
+    def __init__(
+        self,
+        coordinator: Switch2Coordinator,
+        entry: Switch2ConfigEntry,
+        description: str,
+    ) -> None:
+        super().__init__(coordinator, entry, description)
+        self._attr_unique_id = _charge_unique_id(entry, description)
+        self._attr_name = description
+
+    @property
     def native_value(self) -> float | None:
         """Return the charge amount."""
         charge = self._charge
@@ -296,10 +334,33 @@ class Switch2BillChargeSensor(CoordinatorEntity[Switch2Coordinator], SensorEntit
             return None
         return charge.charge
 
+
+class Switch2ChargeRateSensor(_Switch2LineItemSensor):
+    """Sensor showing what a line item on the latest bill costs per unit.
+
+    The rate excludes VAT, like the line items on the bill.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 4
+
+    def __init__(
+        self,
+        coordinator: Switch2Coordinator,
+        entry: Switch2ConfigEntry,
+        description: str,
+        unit: str,
+    ) -> None:
+        super().__init__(coordinator, entry, description)
+        self._unit = unit
+        self._attr_unique_id = f"{entry.unique_id}_rate_{slugify(description)}"
+        name, self._attr_native_unit_of_measurement = RATE_UNITS[unit]
+        self._attr_name = name.format(description)
+
     @property
-    def extra_state_attributes(self) -> dict[str, str | None]:
-        """Return additional attributes."""
+    def native_value(self) -> float | None:
+        """Return the charge per unit."""
         charge = self._charge
-        if charge is None:
-            return {}
-        return {"units": charge.units}
+        if charge is None or charge.unit != self._unit:
+            return None
+        return _charge_rate(charge)

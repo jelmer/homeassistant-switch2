@@ -247,6 +247,19 @@ async def test_auth_failure_starts_reauth(
     assert [f["context"]["source"] for f in flows] == ["reauth"]
 
 
+async def test_rate_sensors(
+    hass: HomeAssistant, entry: MockConfigEntry, client: MagicMock
+) -> None:
+    await _setup(hass, entry)
+
+    heat = _state(hass, "ACC123_rate_heat")
+    assert float(heat.state) == pytest.approx(42.87 / 252)
+    assert heat.attributes["unit_of_measurement"] == "GBP/kWh"
+    standing = _state(hass, "ACC123_rate_heat_standing_charge")
+    assert float(standing.state) == pytest.approx(22.46 / 30)
+    assert standing.attributes["unit_of_measurement"] == "GBP/day"
+
+
 async def test_meter_per_register(
     hass: HomeAssistant, entry: MockConfigEntry, client: MagicMock
 ) -> None:

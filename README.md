@@ -15,7 +15,8 @@ Fetches meter readings and bill history from the Switch2 customer portal
   VAT, balance and a link to the PDF as attributes.
 - **Account balance**: the current balance shown on the portal.
 - One sensor per **line item** on the latest bill (for example *Heat* or
-  *Heat Standing Charge*).
+  *Heat Standing Charge*), plus its rate: *unit rate* in GBP/kWh for
+  consumption, *per day* in GBP/day for standing charges. Rates exclude VAT.
 
 ## Energy dashboard
 
