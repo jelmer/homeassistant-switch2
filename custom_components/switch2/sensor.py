@@ -15,11 +15,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from switch2 import BillCharge, BillDetail
+from switch2 import BillCharge, BillDetail, MeterReading
 
 from . import Switch2ConfigEntry
 from .const import DOMAIN
 from .coordinator import Switch2Coordinator
+from .statistics import consumption_statistic_id
 
 
 def _device_info(
@@ -133,28 +134,35 @@ class Switch2MeterSensor(CoordinatorEntity[Switch2Coordinator], SensorEntity):
         self._attr_device_info = _device_info(entry, coordinator)
 
     @property
+    def _latest_reading(self) -> MeterReading | None:
+        data = self.coordinator.data
+        readings = data.register_readings.get(self._register_id)
+        if readings is None:
+            # The portal offered no way to pick a register.
+            readings = data.readings
+        return max(readings, key=lambda reading: reading.date, default=None)
+
+    @property
     def native_value(self) -> float | None:
         """Return the latest meter reading."""
-        # TODO: the API client only fetches readings for the register that
-        # the portal selects by default, so with multiple registers every
-        # sensor reports that register's readings.
-        readings = self.coordinator.data.readings
-        if not readings:
-            return None
-        return readings[0].amount
+        reading = self._latest_reading
+        return reading.amount if reading is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
         """Return additional attributes."""
-        readings = self.coordinator.data.readings
         customer = self.coordinator.data.customer
         attrs: dict[str, str | None] = {
             "account_number": customer.account_number,
             "address": customer.address,
+            "statistic_id": consumption_statistic_id(
+                customer.account_number, self._register_id
+            ),
         }
-        if readings:
-            attrs["reading_date"] = readings[0].date.date().isoformat()
-            attrs["reading_type"] = readings[0].reading_type
+        reading = self._latest_reading
+        if reading is not None:
+            attrs["reading_date"] = reading.date.date().isoformat()
+            attrs["reading_type"] = reading.reading_type
         return attrs
 
 

@@ -11,12 +11,15 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from switch2 import (
+    Bill,
     BillDetail,
     Switch2ApiClient,
     Switch2AuthError,
-    Switch2ConnectionError,
     Switch2Data,
+    Switch2Error,
 )
+
+from .statistics import async_import_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,22 +40,49 @@ class Switch2Coordinator(DataUpdateCoordinator[Switch2Data]):
             update_interval=UPDATE_INTERVAL,
         )
         self.client = client
+        # Details of the latest bill, kept when a later fetch fails.
         self.bill_detail: BillDetail | None = None
+        # Issued bills do not change, so their details are fetched once.
+        self._bill_details: dict[str, BillDetail] = {}
 
     async def _async_update_data(self) -> Switch2Data:
         try:
             data = await self.client.fetch_data()
         except Switch2AuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
-        except Switch2ConnectionError as err:
+        except Switch2Error as err:
             raise UpdateFailed(f"Error fetching Switch2 data: {err}") from err
 
-        if data.bills:
-            try:
-                self.bill_detail = await self.client.fetch_bill_detail(data.bills[0])
-            except Switch2ConnectionError as err:
-                _LOGGER.warning(
-                    "Failed to fetch bill detail, keeping previous one: %s", err
-                )
+        complete = await self._async_fetch_bill_details(data.bills)
+        if data.bills and data.bills[0].detail_url in self._bill_details:
+            self.bill_detail = self._bill_details[data.bills[0].detail_url]
 
+        await async_import_statistics(
+            self.hass,
+            data.customer.account_number,
+            data.registers,
+            data.register_readings,
+            self._bill_details.values() if complete else None,
+        )
         return data
+
+    async def _async_fetch_bill_details(self, bills: list[Bill]) -> bool:
+        """Fetch the details of new bills; return whether all are known."""
+        complete = True
+        for bill in bills:
+            if not bill.detail_url:
+                _LOGGER.warning("Bill of %s has no detail page", bill.date.date())
+                complete = False
+                continue
+            if bill.detail_url in self._bill_details:
+                continue
+            try:
+                detail = await self.client.fetch_bill_detail(bill)
+            except Switch2Error as err:
+                _LOGGER.warning(
+                    "Failed to fetch bill of %s, will retry: %s", bill.date.date(), err
+                )
+                complete = False
+                continue
+            self._bill_details[bill.detail_url] = detail
+        return complete

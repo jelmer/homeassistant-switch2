@@ -18,5 +18,9 @@ def hass_config_dir(tmp_path: pathlib.Path) -> str:
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):
+def auto_enable_custom_integrations(recorder_mock, enable_custom_integrations):
+    """Load custom_components, with the recorder the integration depends on.
+
+    The recorder has to be set up before the ``hass`` fixture is created.
+    """
     yield
