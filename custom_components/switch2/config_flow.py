@@ -6,7 +6,7 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
-import voluptuous as vol
+import probatio
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 
 from switch2 import (
@@ -20,14 +20,14 @@ from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-STEP_USER_DATA_SCHEMA = vol.Schema(
+STEP_USER_DATA_SCHEMA = probatio.Schema(
     {
-        vol.Required(CONF_EMAIL): str,
-        vol.Required(CONF_PASSWORD): str,
+        probatio.Required(CONF_EMAIL): str,
+        probatio.Required(CONF_PASSWORD): str,
     }
 )
 
-STEP_REAUTH_DATA_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
+STEP_REAUTH_DATA_SCHEMA = probatio.Schema({probatio.Required(CONF_PASSWORD): str})
 
 
 async def _login(email: str, password: str) -> CustomerInfo:
