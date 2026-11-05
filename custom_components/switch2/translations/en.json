@@ -8,6 +8,13 @@
           "email": "Email address",
           "password": "Password"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Switch2",
+        "description": "The Switch2 portal rejected the stored credentials. Enter the current password for {email}.",
+        "data": {
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -16,7 +23,9 @@
       "unknown": "An unexpected error occurred."
     },
     "abort": {
-      "already_configured": "This Switch2 account is already configured."
+      "already_configured": "This Switch2 account is already configured.",
+      "reauth_successful": "Reauthentication was successful.",
+      "unique_id_mismatch": "These credentials belong to a different Switch2 account."
     }
   }
 }
