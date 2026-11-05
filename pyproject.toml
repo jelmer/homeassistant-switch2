@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "Home Assistant integration for Switch2 district heating"
 requires-python = ">=3.13"
 dependencies = [
-    "switch2>=0.2.0",
+    "switch2>=0.2.1",
 ]
 
 [tool.setuptools.packages.find]
